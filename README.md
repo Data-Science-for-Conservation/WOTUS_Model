@@ -1,2 +1,3 @@
-# WOTUS_Model
-The deployed model created in the WOTUS_Revision repository
+# Deployed WOTUS Model
+
+Heroku app files for the deployed model created in the [WOTUS_Revision repository](https://github.com/Data-Science-for-Conservation/WOTUS_Revision).
