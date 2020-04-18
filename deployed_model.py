@@ -6,12 +6,12 @@ import pandas as pd
 import streamlit as st
 
 
-@st.cache(allow_output_mutation=True)
-def get_clf_model():
-    with open('final_sentiment_clf.pkl', 'rb') as f:
-        model = pickle.load(f)
+# @st.cache(allow_output_mutation=True)
+# def get_clf_model():
+#     with open('final_sentiment_clf.pkl', 'rb') as f:
+#         model = pickle.load(f)
 
-    return model
+#     return model
 
 
 st.title('Sentiment Classifier Demo')
@@ -25,22 +25,22 @@ of the United States" and see whether the model classifies it as "Opposing" or
 confidence) it assigns to that label.
 """)
 
-sent_clf = get_clf_model()
+# sent_clf = get_clf_model()
 
 classes = {0: "Opposing",
            1: "Supportive"}
 
 
-def run_sent_analysis(comment):
-    pred = sent_clf.predict_proba(comment)
-    label = classes[pred[0].argmax()]
-    prob = round(pred[0].max(), 3)
+# def run_sent_analysis(comment):
+#     pred = sent_clf.predict_proba(comment)
+#     label = classes[pred[0].argmax()]
+#     prob = round(pred[0].max(), 3)
 
-    results = pd.DataFrame([label, prob],
-                           index=['Sentiment', 'Confidence'],
-                           columns=['Value'])
+#     results = pd.DataFrame([label, prob],
+#                            index=['Sentiment', 'Confidence'],
+#                            columns=['Value'])
 
-    return results
+#     return results
 
 
 example_comments = {1: 'It is important for water quality to protect our '
@@ -73,11 +73,11 @@ ex_c = example_comments[random.choice(range(1, 6))]
 
 comment = st.text_area('Enter your comment here', ex_c)
 
-try:
-    result = run_sent_analysis([comment])
-    st.table(result)
-except ValueError as e:
-    st.write(e)
+# try:
+#     result = run_sent_analysis([comment])
+#     st.table(result)
+# except ValueError as e:
+#     st.write(e)
 
 st.markdown(
 """
