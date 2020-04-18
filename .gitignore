@@ -2,6 +2,9 @@
 /Data/Comments/*.txt
 /Data/*comments*
 
+# Mac XCode artifacts
+default.profraw
+
 # Pickled DataFrame, models
 *.pkl
 
