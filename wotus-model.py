@@ -9,6 +9,11 @@ import streamlit as st
 
 
 def main():
+    # Path variables
+    sent_model_path = './final_sentiment_clf.pkl'
+    nmf_model_path = './nmf_pipe.pkl'
+    lab_comments_path = './Data/comments_word_labels.pkl'
+
     st.title('Sentiment Classifier and Similarity Analysis Demo')
     st.markdown(
     """
@@ -22,10 +27,8 @@ def main():
     probability (or confidence) it assigns to that label.
     """)
 
-    sent_clf = get_clf_model()
-
-    classes = {0: "Opposed",
-               1: "Supportive"}
+    # Sentiment Analysis
+    sent_clf_pipe = get_clf_model(sent_model_path)
 
     ex_comments = {1: 'It is important for water quality to protect our '
                       'wetlands and waterways. We should be increasing '
@@ -58,13 +61,7 @@ def main():
     comment = st.text_area('Enter your comment here', ex_c)
 
     try:
-        pred = sent_clf.predict_proba([comment])
-        label = classes[pred[0].argmax()]
-        prob = pred[0].max()
-
-        results = pd.DataFrame([label, prob],
-                               index=['Sentiment', 'Confidence'],
-                               columns=['Value'])
+        results = run_sent_analysis(sent_clf_pipe, comment)
 
         subset = pd.IndexSlice['Confidence', 'Value']
 
@@ -76,13 +73,13 @@ def main():
     except ValueError as e:
         st.write(e)
 
-    # NMF Cosine Similarity
-    nmf_pipe = get_nmf_model()
-    X_all_labeled, y_all_labeled = get_all_labeled_comments()
+    # Cosine Similarity
+    nmf_pipe = get_nmf_model(nmf_model_path)
+    X_all_labeled, y_all_labeled = get_all_labeled_comments(lab_comments_path)
 
     try:
         feats_df = get_nmf_feats(X_all_labeled, nmf_pipe)
-        similarities = cosine_sim(feats_df, nmf_pipe, comment)
+        similarities = calc_cosine_sim(feats_df, nmf_pipe, comment)
         df_n_largest = get_n_sims_w_labels(similarities, y_all_labeled, 5)
 
         st.markdown("## Five Most Similar Comments in the Labeled Dataset")
@@ -100,45 +97,45 @@ def main():
     """
     Additional project resources include a full
     [project writeup](https://data-science-for-conservation.github.io/WOTUS_Revision/)
-    or the
+    and the
     [source code](https://github.com/Data-Science-for-Conservation/WOTUS_Revision)
     that generated the model.
     """)
 
 
 @st.cache(allow_output_mutation=True)  # Changes caused by .predict() ok
-def get_clf_model():
+def get_clf_model(path):
     """
     Loads pre-trained pickled model
     :return: scikit-learn pipeline including vectorizer and model
     """
-    with open('final_sentiment_clf.pkl', 'rb') as f:
+    with open(path, 'rb') as f:
         model = pickle.load(f)
 
     return model
 
 
 @st.cache(allow_output_mutation=True)  # Changes caused from applying model ok
-def get_nmf_model():
+def get_nmf_model(path):
     """
     Loads pre-trained pickled model
     :return: scikit-learn pipeline including a vectorizer and NMF model
     """
-    with open('nmf_pipe.pkl', 'rb') as f:
+    with open(path, 'rb') as f:
         nmf_pipe = pickle.load(f)
 
     return nmf_pipe
 
 
 @st.cache()
-def get_all_labeled_comments():
+def get_all_labeled_comments(path):
     """
     Loads two DataFrames for the entire set of labeled comments
     :param path: a path to the pickled dataset
     :return: two DataFrames, X_all_labeled has original index and the comments,
         y_all_labeled has the comment text as the index and the labels
     """
-    lab_comments = pd.read_pickle('./Data/comments_word_labels.pkl')
+    lab_comments = pd.read_pickle(path)
 
     X_all_labeled = lab_comments.drop('Support_Rule_Change', axis=1)
     y_all_labeled = lab_comments.set_index('Comment')
@@ -147,13 +144,28 @@ def get_all_labeled_comments():
     return X_all_labeled, y_all_labeled
 
 
+def run_sent_analysis(sent_clf_pipe, comment):
+    """
+
+    """
+    classes = {0: "Opposed",
+               1: "Supportive"}
+
+    pred = sent_clf_pipe.predict_proba([comment])
+    label = classes[pred[0].argmax()]
+    prob = pred[0].max()
+
+    results = pd.DataFrame([label, prob],
+                           index=['Sentiment', 'Confidence'],
+                           columns=['Value'])
+
+    return results
+
+
 def color_green(val):
     """
-    Takes a scalar, returns a string with the CSS
-    property `'color: green'`
+    Adds CSS property `'color: green'` formatting to DataFrame item
     """
-    # color = 'green' if type(val) == np.float64 else 'black'
-    # return f'color: {color}'
     return 'color: green'
 
 
@@ -175,7 +187,7 @@ def get_nmf_feats(X_all_labeled, nmf_pipe):
     return feats_df
 
 
-def cosine_sim(feats_df, nmf_pipe, comment):
+def calc_cosine_sim(feats_df, nmf_pipe, comment):
     """
     :param feats_df: DataFrame of normalized NMF model values with comment text
         as index
